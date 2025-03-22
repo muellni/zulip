@@ -1199,6 +1199,9 @@ def do_import_realm(import_dir: Path, subdomain: str, processes: int = 1) -> Rea
     del data["zerver_userprofile_mirrordummy"]
     data["zerver_userprofile"].sort(key=lambda r: r["id"])
 
+    reaction_dict = {f"{reaction['user_profile']}_{reaction['message']}_{reaction['reaction_type']}_{reaction['emoji_code']}": reaction for reaction in data["zerver_reaction"]}
+    data["zerver_reaction"] = reaction_dict.values()
+
     remove_denormalized_recipient_column_from_data(data)
 
     sort_by_date = data.get("sort_by_date", False)
