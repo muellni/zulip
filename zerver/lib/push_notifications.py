@@ -766,7 +766,7 @@ def push_notifications_configured() -> bool:
         # developers often work on just one platform at a time, so we should
         # only require one to be configured.
         return True
-    elif has_apns_credentials() and has_fcm_credentials():  # nocoverage
+    elif has_fcm_credentials():  # nocoverage
         # We have the needed configuration to send through APNs and FCM directly
         # (i.e., we are the bouncer, presumably.)  Again, assume it actually works.
         return True
@@ -1229,7 +1229,7 @@ def handle_remove_push_notification(user_profile_id: int, message_ids: list[int]
     MAX_APNS_MESSAGE_IDS = 200
     truncated_message_ids = sorted(message_ids)[-MAX_APNS_MESSAGE_IDS:]
     gcm_payload, gcm_options = get_remove_payload_gcm(user_profile, truncated_message_ids)
-    apns_payload = get_remove_payload_apns(user_profile, truncated_message_ids)
+    # apns_payload = get_remove_payload_apns(user_profile, truncated_message_ids)
 
     android_devices = list(
         PushDeviceToken.objects.filter(user=user_profile, kind=PushDeviceToken.FCM).order_by("id")
@@ -1238,18 +1238,16 @@ def handle_remove_push_notification(user_profile_id: int, message_ids: list[int]
         PushDeviceToken.objects.filter(user=user_profile, kind=PushDeviceToken.APNS).order_by("id")
     )
     if uses_notification_bouncer():
-        send_notifications_to_bouncer(
-            user_profile, apns_payload, gcm_payload, gcm_options, android_devices, apple_devices
-        )
+        # send_notifications_to_bouncer(
+        #     user_profile, apns_payload, gcm_payload, gcm_options, android_devices, apple_devices
+        # )
     else:
         user_identity = UserPushIdentityCompat(user_id=user_profile_id)
 
         android_successfully_sent_count = send_android_push_notification(
             user_identity, android_devices, gcm_payload, gcm_options
         )
-        apple_successfully_sent_count = send_apple_push_notification(
-            user_identity, apple_devices, apns_payload
-        )
+        apple_successfully_sent_count = 0
 
         do_increment_logging_stat(
             user_profile.realm,
@@ -1391,14 +1389,14 @@ def handle_push_notification(user_profile_id: int, missed_message: dict[str, Any
         # to the sender if they did not had access previously.
         can_access_sender = True
 
-    apns_payload = get_message_payload_apns(
-        user_profile,
-        message,
-        trigger,
-        mentioned_user_group_id,
-        mentioned_user_group_name,
-        can_access_sender,
-    )
+    # apns_payload = get_message_payload_apns(
+    #     user_profile,
+    #     message,
+    #     trigger,
+    #     mentioned_user_group_id,
+    #     mentioned_user_group_name,
+    #     can_access_sender,
+    # )
     gcm_payload, gcm_options = get_message_payload_gcm(
         user_profile, message, mentioned_user_group_id, mentioned_user_group_name, can_access_sender
     )
@@ -1408,13 +1406,13 @@ def handle_push_notification(user_profile_id: int, missed_message: dict[str, Any
         PushDeviceToken.objects.filter(user=user_profile, kind=PushDeviceToken.FCM).order_by("id")
     )
 
-    apple_devices = list(
-        PushDeviceToken.objects.filter(user=user_profile, kind=PushDeviceToken.APNS).order_by("id")
-    )
+    # apple_devices = list(
+    #     PushDeviceToken.objects.filter(user=user_profile, kind=PushDeviceToken.APNS).order_by("id")
+    # )
     if uses_notification_bouncer():
-        send_notifications_to_bouncer(
-            user_profile, apns_payload, gcm_payload, gcm_options, android_devices, apple_devices
-        )
+        # send_notifications_to_bouncer(
+        #     user_profile, apns_payload, gcm_payload, gcm_options, android_devices, apple_devices
+        # )
         return
 
     logger.info(
