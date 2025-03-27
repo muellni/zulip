@@ -1461,7 +1461,7 @@ def send_test_push_notification_directly_to_devices(
     # TODO/compatibility: Backwards-compatibility name for realm_url.
     realm_url = base_payload.get("realm_url", base_payload["realm_uri"])
     realm_name = base_payload["realm_name"]
-    apns_data = {
+    # apns_data = {
     #     "alert": {
     #         "title": _("Test notification"),
     #         "body": _("This is a test notification from {realm_name} ({realm_url}).").format(
