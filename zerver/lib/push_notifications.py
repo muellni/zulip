@@ -534,7 +534,7 @@ def uses_notification_bouncer() -> bool:
 
 
 def sends_notifications_directly() -> bool:
-    return has_apns_credentials() and has_fcm_credentials() and not uses_notification_bouncer()
+    return has_fcm_credentials() and not uses_notification_bouncer()
 
 
 def send_notifications_to_bouncer(
