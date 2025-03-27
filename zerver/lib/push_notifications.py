@@ -1238,6 +1238,7 @@ def handle_remove_push_notification(user_profile_id: int, message_ids: list[int]
         PushDeviceToken.objects.filter(user=user_profile, kind=PushDeviceToken.APNS).order_by("id")
     )
     if uses_notification_bouncer():
+        pass
         # send_notifications_to_bouncer(
         #     user_profile, apns_payload, gcm_payload, gcm_options, android_devices, apple_devices
         # )
@@ -1410,6 +1411,7 @@ def handle_push_notification(user_profile_id: int, missed_message: dict[str, Any
     #     PushDeviceToken.objects.filter(user=user_profile, kind=PushDeviceToken.APNS).order_by("id")
     # )
     if uses_notification_bouncer():
+        pass
         # send_notifications_to_bouncer(
         #     user_profile, apns_payload, gcm_payload, gcm_options, android_devices, apple_devices
         # )
@@ -1449,27 +1451,27 @@ def send_test_push_notification_directly_to_devices(
     payload = copy.deepcopy(base_payload)
     payload["event"] = "test"
 
-    apple_devices = [device for device in devices if device.kind == PushDeviceToken.APNS]
+    # apple_devices = [device for device in devices if device.kind == PushDeviceToken.APNS]
     android_devices = [device for device in devices if device.kind == PushDeviceToken.FCM]
     # Let's make the payloads separate objects to make sure mutating to make e.g. Android
     # adjustments doesn't affect the Apple payload and vice versa.
-    apple_payload = copy.deepcopy(payload)
+    # apple_payload = copy.deepcopy(payload)
     android_payload = copy.deepcopy(payload)
 
     # TODO/compatibility: Backwards-compatibility name for realm_url.
     realm_url = base_payload.get("realm_url", base_payload["realm_uri"])
     realm_name = base_payload["realm_name"]
     apns_data = {
-        "alert": {
-            "title": _("Test notification"),
-            "body": _("This is a test notification from {realm_name} ({realm_url}).").format(
-                realm_name=realm_name, realm_url=realm_url
-            ),
-        },
-        "sound": "default",
-        "custom": {"zulip": apple_payload},
-    }
-    send_apple_push_notification(user_identity, apple_devices, apns_data, remote=remote)
+    #     "alert": {
+    #         "title": _("Test notification"),
+    #         "body": _("This is a test notification from {realm_name} ({realm_url}).").format(
+    #             realm_name=realm_name, realm_url=realm_url
+    #         ),
+    #     },
+    #     "sound": "default",
+    #     "custom": {"zulip": apple_payload},
+    # }
+    # send_apple_push_notification(user_identity, apple_devices, apns_data, remote=remote)
 
     android_payload["time"] = datetime_to_timestamp(timezone_now())
     gcm_options = {"priority": "high"}
