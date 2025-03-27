@@ -1425,9 +1425,10 @@ def handle_push_notification(user_profile_id: int, missed_message: dict[str, Any
     )
     user_identity = UserPushIdentityCompat(user_id=user_profile.id)
 
-    apple_successfully_sent_count = send_apple_push_notification(
-        user_identity, apple_devices, apns_payload
-    )
+    # apple_successfully_sent_count = send_apple_push_notification(
+    #     user_identity, apple_devices, apns_payload
+    # )
+    apple_successfully_sent_count = 0
     android_successfully_sent_count = send_android_push_notification(
         user_identity, android_devices, gcm_payload, gcm_options
     )
