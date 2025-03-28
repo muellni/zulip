@@ -761,7 +761,7 @@ def push_notifications_configured() -> bool:
         # works -- e.g., that we have ever successfully sent to the bouncer --
         # but this is a good start.
         return True
-    if settings.DEVELOPMENT and (has_apns_credentials() or has_fcm_credentials()):  # nocoverage
+    if has_apns_credentials() or has_fcm_credentials():  # nocoverage
         # Since much of the notifications logic is platform-specific, the mobile
         # developers often work on just one platform at a time, so we should
         # only require one to be configured.
