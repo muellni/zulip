@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 import random
 import secrets
 import uuid
@@ -266,7 +267,7 @@ def convert_direct_message_group_data(
 
 
 def build_custom_emoji(
-    realm_id: int, custom_emoji_data: dict[str, list[dict[str, Any]]], output_dir: str
+    realm_id: int, custom_emoji_data: dict[str, list[dict[str, Any]]], output_dir: str, uploads_dir: str
 ) -> list[ZerverFieldsT]:
     logging.info("Starting to process custom emoji")
 
@@ -281,6 +282,9 @@ def build_custom_emoji(
     for emoji_file in custom_emoji_data["file"]:
         emoji_file_data[str(emoji_file["_id"])] = {
             "filename": f"{emoji_file['name']}.{emoji_file['extension']}", "chunks": []}
+    if len(custom_emoji_data["chunk"]):
+        for emoji_chunk in custom_emoji_data["chunk"]:
+            emoji_file_data[emoji_chunk["files_id"]]["chunks"].append(emoji_chunk["data"])
 
     # Build custom emoji
     for rc_emoji in custom_emoji_data["emoji"]:
@@ -296,8 +300,11 @@ def build_custom_emoji(
         target_path = os.path.join(emoji_folder, target_sub_path)
 
         os.makedirs(os.path.dirname(target_path), exist_ok=True)
-        with open(target_path, "wb") as e_file:
-            e_file.write(emoji_data)
+        if (len(emoji_data) == 0) and uploads_dir:
+            shutil.copy(os.path.join(uploads_dir, emoji_filename), target_path)
+        else:
+            with open(target_path, "wb") as e_file:
+                e_file.write(emoji_data)
 
         emoji_aliases = [rc_emoji["name"]]
         emoji_aliases.extend(rc_emoji["aliases"])
@@ -376,6 +383,7 @@ def process_message_attachment(
     uploads_list: list[ZerverFieldsT],
     upload_id_to_upload_data_map: dict[str, dict[str, Any]],
     output_dir: str,
+    uploads_dir: str,
 ) -> tuple[str, bool]:
     if upload["_id"] not in upload_id_to_upload_data_map:  # nocoverage
         logging.info("Skipping unknown attachment of message_id: %s", message_id)
@@ -415,8 +423,11 @@ def process_message_attachment(
     # Build the attachment from chunks and save it to s3_path.
     file_out_path = os.path.join(output_dir, "uploads", s3_path)
     os.makedirs(os.path.dirname(file_out_path), exist_ok=True)
-    with open(file_out_path, "wb") as upload_file:
-        upload_file.write(b"".join(upload_file_data["chunk"]))
+    if (len(upload_file_data["chunk"]) == 0) and uploads_dir:
+        shutil.copy(os.path.join(uploads_dir, file_name), file_out_path)
+    else:
+        with open(file_out_path, "wb") as upload_file:
+            upload_file.write(b"".join(upload_file_data["chunk"]))
 
     attachment_content = (
         f"{upload_file_data.get('description', '')}\n\n[{file_name}](/user_uploads/{s3_path})"
@@ -464,6 +475,7 @@ def process_raw_message_batch(
     uploads_list: list[ZerverFieldsT],
     zerver_attachment: list[ZerverFieldsT],
     upload_id_to_upload_data_map: dict[str, dict[str, Any]],
+    uploads_dir: str,
 ) -> None:
     def fix_mentions(
         content: str, mention_user_ids: set[int], rc_channel_mention_data: list[dict[str, str]]
@@ -624,6 +636,7 @@ def process_messages(
     zerver_attachment: list[ZerverFieldsT],
     upload_id_to_upload_data_map: dict[str, dict[str, Any]],
     output_dir: str,
+    uploads_dir: str,
 ) -> None:
     def list_reactions(reactions: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
         # List of dictionaries of form:
@@ -809,6 +822,7 @@ def process_messages(
             uploads_list=uploads_list,
             zerver_attachment=zerver_attachment,
             upload_id_to_upload_data_map=upload_id_to_upload_data_map,
+            uploads_dir=uploads_dir,
         )
 
     chunk_size = 1000
@@ -1068,7 +1082,7 @@ def rocketchat_data_to_dict(
     return rocketchat_data
 
 
-def do_convert_data(rocketchat_data_dir: str, output_dir: str) -> None:
+def do_convert_data(rocketchat_data_dir: str, output_dir: str, uploads_dir: str) -> None:
     # Get all required exported data in a dictionary
 
     # Subdomain is set by the user while running the import command
@@ -1107,6 +1121,7 @@ def do_convert_data(rocketchat_data_dir: str, output_dir: str) -> None:
         realm_id=realm_id,
         custom_emoji_data=rocketchat_emoji_data,
         output_dir=output_dir,
+        uploads_dir=uploads_dir
     )
     realm["zerver_realmemoji"] = zerver_realmemoji
 
@@ -1249,6 +1264,7 @@ def do_convert_data(rocketchat_data_dir: str, output_dir: str) -> None:
         zerver_attachment=zerver_attachment,
         upload_id_to_upload_data_map=upload_id_to_upload_data_map,
         output_dir=output_dir,
+        uploads_dir=uploads_dir,
     )
     # Process direct messages
     process_messages(
@@ -1275,6 +1291,7 @@ def do_convert_data(rocketchat_data_dir: str, output_dir: str) -> None:
         zerver_attachment=zerver_attachment,
         upload_id_to_upload_data_map=upload_id_to_upload_data_map,
         output_dir=output_dir,
+        uploads_dir=uploads_dir,
     )
     realm["zerver_reaction"] = total_reactions
     realm["zerver_userprofile"] = user_handler.get_all_users()
