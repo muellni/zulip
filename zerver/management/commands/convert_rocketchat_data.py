@@ -23,6 +23,10 @@ class Command(ZulipBaseCommand):
             "--output", dest="output_dir", help="Directory to write converted data to."
         )
 
+        parser.add_argument(
+            "--uploads", dest="uploads_dir", help="Directory to read file uploads from", default=None
+        )
+
         parser.formatter_class = argparse.RawTextHelpFormatter
 
     @override
@@ -45,5 +49,7 @@ class Command(ZulipBaseCommand):
             raise CommandError(f"Directory not found: '{data_dir}'")
         data_dir = os.path.realpath(data_dir)
 
+        uploads_dir = options["uploads_dir"]
+
         print("Converting Data ...")
-        do_convert_data(rocketchat_data_dir=data_dir, output_dir=output_dir)
+        do_convert_data(rocketchat_data_dir=data_dir, output_dir=output_dir, uploads_dir=uploads_dir)
