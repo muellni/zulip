@@ -6,6 +6,7 @@ import secrets
 import uuid
 from typing import Any
 from datetime import datetime, timezone
+import glob
 
 import bson
 from django.conf import settings
@@ -432,12 +433,12 @@ def process_message_attachment(
     file_out_path = os.path.join(output_dir, "uploads", s3_path)
     os.makedirs(os.path.dirname(file_out_path), exist_ok=True)
     if (len(upload_file_data["chunk"]) == 0) and uploads_dir:
-        upload_file = os.path.join(uploads_dir, upload["_id"])
-        if os.path.exists(upload_file):
-            logging.info(f"Copying ${upload_file} to ${file_out_path}")
-            shutil.copy(upload_file, file_out_path)
+        upload_files = glob.glob(os.path.join(uploads_dir, upload["_id"]) + "*")
+        if len(upload_files):
+            logging.info(f"Copying ${upload_files[0]} to ${file_out_path}")
+            shutil.copy(upload_files[0], file_out_path)
         else:
-            logging.error("upload file %s of upload %s not found", upload_file, upload)
+            logging.error("upload id %s of upload %s not found", upload["_id"], upload)
             pass
     else:
         with open(file_out_path, "wb") as upload_file:
