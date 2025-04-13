@@ -437,7 +437,7 @@ def process_message_attachment(
             logging.info(f"Copying ${upload_file} to ${file_out_path}")
             shutil.copy(upload_file, file_out_path)
         else:
-            # logging.error("upoload file %s of upload %s not found", upload_file, upload)
+            logging.error("upload file %s of upload %s not found", upload_file, upload)
             pass
     else:
         with open(file_out_path, "wb") as upload_file:
