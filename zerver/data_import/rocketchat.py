@@ -617,24 +617,29 @@ def get_topic_name(
     message: dict[str, Any],
     dsc_id_to_dsc_map: dict[str, dict[str, Any]],
     thread_id_mapper: IdMapper[str],
+    thread_id_topic_mapper: dict[int, str],
     is_pm_data: bool = False,
 ) -> str:
     if is_pm_data:
         return ""
     elif message["rid"] in dsc_id_to_dsc_map:
         dsc_channel_name = dsc_id_to_dsc_map[message["rid"]]["fname"]
-        return truncate_name(f"{dsc_channel_name} (Imported from Rocket.Chat)", message["rid"])
+        return truncate_name(f"{dsc_channel_name} (Imported)", message["rid"])
     elif message.get("replies"):
         # Message is the start of a thread
         thread_id = thread_id_mapper.get(message["_id"])
-        return truncate_name(f"Thread {thread_id} (Imported from Rocket.Chat)", message["_id"])
+        if (not thread_id in thread_id_topic_mapper):
+            thread_id_topic_mapper[thread_id] = truncate_name(f"{message["msg"]} (Imported)", message["_id"])
+        return thread_id_topic_mapper[thread_id]
     elif message.get("tmid"):
         # Message is a part of a thread
         thread_id = thread_id_mapper.get(message["tmid"])
-        return truncate_name(f"Thread {thread_id} (Imported from Rocket.Chat)", message["tmid"])
+        if (not thread_id in thread_id_topic_mapper):
+            thread_id_topic_mapper[thread_id] = truncate_name(f"{message["msg"]} (Imported)", message["tmid"])
+        return thread_id_topic_mapper[thread_id]
     else:
         # Normal channel message
-        return "Imported from Rocket.Chat"
+        return "(Imported)"
 
 
 def process_messages(
@@ -651,6 +656,7 @@ def process_messages(
     direct_message_group_id_mapper: IdMapper[str],
     direct_message_group_id_to_recipient_id: dict[int, int],
     thread_id_mapper: IdMapper[str],
+    thread_id_topic_mapper: dict[int, str],
     room_id_to_room_map: dict[str, dict[str, Any]],
     dsc_id_to_dsc_map: dict[str, dict[str, Any]],
     direct_id_to_direct_map: dict[str, dict[str, Any]],
@@ -745,7 +751,7 @@ def process_messages(
 
         # Add topic name to message_dict
         message_dict["topic_name"] = get_topic_name(
-            message, dsc_id_to_dsc_map, thread_id_mapper, is_pm_data
+            message, dsc_id_to_dsc_map, thread_id_mapper, thread_id_topic_mapper, is_pm_data
         )
 
         # Add user mentions to message_dict
@@ -806,6 +812,7 @@ def process_messages(
                     message={"rid": mention_rc_channel_id},
                     dsc_id_to_dsc_map=dsc_id_to_dsc_map,
                     thread_id_mapper=thread_id_mapper,
+                    thread_id_topic_mapper=thread_id_topic_mapper,
                 )
 
                 parent_rc_channel = room_id_to_room_map[parent_channel_id]
@@ -1130,6 +1137,7 @@ def do_convert_data(rocketchat_data_dir: str, output_dir: str, uploads_dir: str)
     stream_id_mapper = IdMapper[str]()
     direct_message_group_id_mapper = IdMapper[str]()
     thread_id_mapper = IdMapper[str]()
+    thread_id_topic_mapper: dict[int, str] = {}
 
     process_users(
         user_id_to_user_map=user_id_to_user_map,
@@ -1279,6 +1287,7 @@ def do_convert_data(rocketchat_data_dir: str, output_dir: str, uploads_dir: str)
         direct_message_group_id_mapper=direct_message_group_id_mapper,
         direct_message_group_id_to_recipient_id=direct_message_group_id_to_recipient_id,
         thread_id_mapper=thread_id_mapper,
+        thread_id_topic_mapper=thread_id_topic_mapper,
         room_id_to_room_map=room_id_to_room_map,
         dsc_id_to_dsc_map=dsc_id_to_dsc_map,
         direct_id_to_direct_map=direct_id_to_direct_map,
