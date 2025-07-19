@@ -624,8 +624,8 @@ def get_topic_name(
     elif message["rid"] in dsc_id_to_dsc_map:
         dsc_channel_name = dsc_id_to_dsc_map[message["rid"]]["fname"]
         return truncate_name(f"{dsc_channel_name} (Imported)", message["rid"])
-    elif message.get("content"):
-        return truncate_name(f"{message["content"]} (Imported)", message["_id"])
+    elif "msg" in message and "content" in message["msg"]:
+        return truncate_name(f"{message["msg"]["content"]} (Imported)", message["_id"])
     elif message.get("replies"):
         # Message is the start of a thread
         thread_id = thread_id_mapper.get(message["_id"])
