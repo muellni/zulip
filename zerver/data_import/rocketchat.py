@@ -623,18 +623,20 @@ def get_topic_name(
         return ""
     elif message["rid"] in dsc_id_to_dsc_map:
         dsc_channel_name = dsc_id_to_dsc_map[message["rid"]]["fname"]
-        return truncate_name(f"{dsc_channel_name} (Imported from Rocket.Chat)", message["rid"])
+        return truncate_name(f"{dsc_channel_name} (Imported)", message["rid"])
+    elif message.get("content"):
+        return truncate_name(f"{message["content"]} (Imported)", message["_id"])
     elif message.get("replies"):
         # Message is the start of a thread
         thread_id = thread_id_mapper.get(message["_id"])
-        return truncate_name(f"Thread {thread_id} (Imported from Rocket.Chat)", message["_id"])
+        return truncate_name(f"Thread {thread_id} (Imported)", message["_id"])
     elif message.get("tmid"):
         # Message is a part of a thread
         thread_id = thread_id_mapper.get(message["tmid"])
-        return truncate_name(f"Thread {thread_id} (Imported from Rocket.Chat)", message["tmid"])
+        return truncate_name(f"Thread {thread_id} (Imported)", message["tmid"])
     else:
         # Normal channel message
-        return "Imported from Rocket.Chat"
+        return "(Imported)"
 
 
 def process_messages(
